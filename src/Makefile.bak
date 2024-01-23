@@ -1,15 +1,14 @@
-# Makefile for building Luada
+# Makefile for building Lua
+# See ../doc/readme.html for installation and customization instructions.
+
+# == CHANGE THE SETTINGS BELOW TO SUIT YOUR ENVIRONMENT =======================
 
 # Your platform. See PLATS for possible values.
 PLAT= none
 
 CC= gcc -std=gnu99
-
-# For cross-compiling to remote ARM32 device,
-# - LUA_32BITS is defined to have 32-bit integers and 32-bit floats.
-# - size_t in ldump.c is changed to 32 bit.
-CFLAGS= -Os -flto -Wall -Wextra -DLUA_32BITS -DLUA_COMPAT_5_2 $(SYSCFLAGS) $(MYCFLAGS)
-LDFLAGS= $(SYSLDFLAGS) $(MYLDFLAGS) -flto -Wl,-s
+CFLAGS= -O2 -Wall -Wextra -DLUA_COMPAT_5_2 $(SYSCFLAGS) $(MYCFLAGS)
+LDFLAGS= $(SYSLDFLAGS) $(MYLDFLAGS)
 LIBS= -lm $(SYSLIBS) $(MYLIBS)
 
 AR= ar rcu
@@ -25,29 +24,27 @@ MYLDFLAGS=
 MYLIBS=
 MYOBJS=
 
+# == END OF USER SETTINGS -- NO NEED TO CHANGE ANYTHING BELOW THIS LINE =======
 
+PLATS= aix bsd c89 freebsd generic linux macosx mingw posix solaris
 
-# PLATS= aix bsd c89 freebsd generic linux macosx mingw posix solaris
-PLATS= linux
-
-# LUA_A=	liblua.a
+LUA_A=	liblua.a
 CORE_O=	lapi.o lcode.o lctype.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o \
 	lmem.o lobject.o lopcodes.o lparser.o lstate.o lstring.o ltable.o \
 	ltm.o lundump.o lvm.o lzio.o
-LIB_O= lauxlib.o
-# LIB_O=	lauxlib.o lbaselib.o lbitlib.o lcorolib.o ldblib.o liolib.o \
-# 	lmathlib.o loslib.o lstrlib.o ltablib.o lutf8lib.o loadlib.o linit.o
+LIB_O=	lauxlib.o lbaselib.o lbitlib.o lcorolib.o ldblib.o liolib.o \
+	lmathlib.o loslib.o lstrlib.o ltablib.o lutf8lib.o loadlib.o linit.o
 BASE_O= $(CORE_O) $(LIB_O) $(MYOBJS)
 
-LUA_T=	luada
-LUA_O=	luada.o
+LUA_T=	lua
+LUA_O=	lua.o
 
-# LUAC_T=	luac
-# LUAC_O=	luac.o
+LUAC_T=	luac
+LUAC_O=	luac.o
 
 ALL_O= $(BASE_O) $(LUA_O) $(LUAC_O)
 ALL_T= $(LUA_A) $(LUA_T) $(LUAC_T)
-# ALL_A= $(LUA_A)
+ALL_A= $(LUA_A)
 
 # Targets start here.
 default: $(PLAT)
@@ -56,18 +53,17 @@ all:	$(ALL_T)
 
 o:	$(ALL_O)
 
-# a:	$(ALL_A)
+a:	$(ALL_A)
 
-# $(LUA_A): $(BASE_O)
-# 	$(AR) $@ $(BASE_O)
-# 	$(RANLIB) $@
+$(LUA_A): $(BASE_O)
+	$(AR) $@ $(BASE_O)
+	$(RANLIB) $@
 
-# $(LUA_T): $(LUA_O) $(LUA_A)
-$(LUA_T): $(LUA_O) $(BASE_O)
-	$(CC) -o $@ $(LDFLAGS) $(LUA_O) $(BASE_O) $(LIBS)
+$(LUA_T): $(LUA_O) $(LUA_A)
+	$(CC) -o $@ $(LDFLAGS) $(LUA_O) $(LUA_A) $(LIBS)
 
-# $(LUAC_T): $(LUAC_O) $(LUA_A)
-# 	$(CC) -o $@ $(LDFLAGS) $(LUAC_O) $(LUA_A) $(LIBS)
+$(LUAC_T): $(LUAC_O) $(LUA_A)
+	$(CC) -o $@ $(LDFLAGS) $(LUAC_O) $(LUA_A) $(LIBS)
 
 clean:
 	$(RM) $(ALL_T) $(ALL_O)
@@ -111,17 +107,16 @@ freebsd:
 generic: $(ALL)
 
 linux:
-	# $(MAKE) $(ALL) SYSCFLAGS="-DLUA_USE_LINUX" SYSLIBS="-Wl,-E -ldl -lreadline"
-	$(MAKE) $(ALL) SYSCFLAGS="-DLUA_USE_LINUX" SYSLIBS="-lreadline"
+	$(MAKE) $(ALL) SYSCFLAGS="-DLUA_USE_LINUX" SYSLIBS="-Wl,-E -ldl -lreadline"
 
 macosx:
 	$(MAKE) $(ALL) SYSCFLAGS="-DLUA_USE_MACOSX" SYSLIBS="-lreadline"
 
 mingw:
-	$(MAKE) "LUA_A=lua53.dll" "LUA_T=luada.exe" \
+	$(MAKE) "LUA_A=lua53.dll" "LUA_T=lua.exe" \
 	"AR=$(CC) -shared -o" "RANLIB=strip --strip-unneeded" \
-	"SYSCFLAGS=-DLUA_BUILD_AS_DLL" "SYSLIBS=" "SYSLDFLAGS=-s" luada.exe
-	# $(MAKE) "LUAC_T=luac.exe" luac.exe
+	"SYSCFLAGS=-DLUA_BUILD_AS_DLL" "SYSLIBS=" "SYSLDFLAGS=-s" lua.exe
+	$(MAKE) "LUAC_T=luac.exe" luac.exe
 
 posix:
 	$(MAKE) $(ALL) SYSCFLAGS="-DLUA_USE_POSIX"
