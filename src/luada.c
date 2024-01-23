@@ -135,7 +135,7 @@ static bool setup_serial(bool recount)
 
             if ( receive_status(recount, 100) == LUA_OK ) {  // 100 ms
                 if ( recount )
-                    printf("on %s\n", device_path);
+                    printf("via %s\n", device_path);
                 break;
             }
 
